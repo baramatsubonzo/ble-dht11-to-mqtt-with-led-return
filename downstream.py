@@ -2,34 +2,36 @@ import asyncio
 from bleak import BleakScanner, BleakClient
 import paho.mqtt.client as mqtt
 
-# --- config ---
-TARGET_NAME_FRAGMENT = "ShotaIoT3"  # match your BLE.setLocalName()
-CHARACTERISTIC_UUID = "19B10002-E8F2-537E-4F6C-D104768A1214"  # from ble_read-write.ino
-MQTT_HOST = "3.107.180.15"
-MQTT_TOPIC = "ifn649/test"
+# config
+TARGET_NAME_FRAGMENT = "ShotaIoT3"
+CHARACTERISTIC_UUID = "19B10002-E8F2-537E-4F6C-D104768A1214"
+MQTT_HOST = "13.238.128.64"
+MQTT_TOPIC = "ifn649/led" # Topic is led.
 
-BLE_ADDR = None  # set in main()
+BLE_ADDR = None  # initially None, will be set after scanning for the device(i.e. in main())
 
-# --- BLE helpers (blocking wrapper) ---
+# BLE helpers (blocking wrapper)
 async def _ble_write_async(addr: str, cmd: str):
     async with BleakClient(addr) as c:
+        # Calling write_gatt_char blocks the entire program for hundreds of ms to seconds until BLE communication finishes.
         await c.write_gatt_char(CHARACTERISTIC_UUID, cmd.encode("utf-8"), response=True)
         print(f"[BLE] wrote: {cmd}")
 
 def ble_write(cmd: str):
     asyncio.run(_ble_write_async(BLE_ADDR, cmd))
 
-# --- MQTT callback ---
+# MQTT callback
 def on_message(client, userdata, msg):
-    payload = msg.payload.decode(errors="ignore").strip()
+    payload = msg.payload.decode(errors="ignore").strip().upper()
     print(msg.topic, payload)
-    if payload in ("LED_ON", "LED_OFF"):
+    if payload in ("LED_ON", "ON", "LED_OFF", "OFF"):
         ble_write(payload)
 
-# --- main: find BLE MAC address, then start MQTT ---
+# main: find BLE MAC address, then start MQTT
 def main():
     global BLE_ADDR
 
+    # Asynchronously scan for nearby devices for up to 5 seconds
     async def find_addr():
         devices = await BleakScanner.discover(timeout=5.0)
         for d in devices:
@@ -44,7 +46,8 @@ def main():
     client.on_message = on_message
     client.connect(MQTT_HOST, 1883)
     client.subscribe(MQTT_TOPIC)
-    print("[MQTT] Subscribed; waiting for LED commands")
+    # display topic name
+    print(f"[MQTT] Subscribed to '{MQTT_TOPIC}', waiting for LED commands")
     client.loop_forever()
 
 if __name__ == "__main__":

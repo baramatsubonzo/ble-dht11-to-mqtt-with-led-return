@@ -2,12 +2,12 @@ import asyncio
 from bleak import BleakScanner, BleakClient
 import paho.mqtt.client as mqtt
 
-TARGET_NAME_FRAGMENT = "ShotaIoT3"  # Change to match your BLE.setLocalName()
+TARGET_NAME_FRAGMENT = "ShotaIoT3"
 CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1214"
 
-MQTT_HOST = "3.107.180.15"
+MQTT_HOST = "13.238.128.64"
 MQTT_PORT = 1883
-MQTT_TOPIC = "ifn649/test"
+MQTT_TOPIC = "ifn649/dht"
 
 async def scan_and_connect():
     mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -15,6 +15,7 @@ async def scan_and_connect():
 
     try:
         print("Scanning for BLE devices...")
+        # Asynchronously scan for nearby devices for up to 5 seconds
         devices = await BleakScanner.discover(timeout=5.0)
 
         target_device = None
@@ -29,12 +30,13 @@ async def scan_and_connect():
 
         print(f"Found target: {target_device.name} ({target_device.address})")
 
-        # --- Use a distinct name for the BLE client ---
+        # Connect to the discovered Arduino address
         async with BleakClient(target_device.address) as ble_client:
             if ble_client.is_connected:
                 print("Connected successfully.")
                 try:
-                    value = await ble_client.read_gatt_char(CHARACTERISTIC_UUID)
+                    # read_gatt_char is an async I/O call (may take hundreds of ms to seconds)
+                    value = await ble_client.read_gatt_char(CHARACTERISTIC_UUID) # Read the dhtCharacteristic on the Arduino side
                     print(f"Raw value: {value}")
                     try:
                         decoded = value.decode('utf-8')

@@ -25,13 +25,30 @@ flowchart LR
 	DHT -->|Temperature & Humidity| Arduino
     Arduino --> |BLE Read/Notify| Pi
     Pi --> |Publish: ifn649/dht| EC2
-    EC2 --> |Subscribes ifn649/dht| Phone
+    EC2 --> |Data ifn649/dht| Phone
     Phone --> |LED_ON/OFF: ifn649/led| EC2
-    EC2 --> |Subscribes ifn649/led| Pi
+    EC2 --> |Commands ifn649/led| Pi
     Pi --> |BLE Write| Arduino
     Arduino --> LED
-
 ```
+<br>
+<br>
+
+# DHT-11 and Arduino Nano 33 IoT wiring
+![DHT-11 and Arduino Nano 33 IoT wirrein](images/Arudino-DHT11.jpg)
+<br>
+
+
+| DHT-11 Pin (row)    | Wire Color | Jumper: **from → to** | Nano 33 IoT Pin (row) |
+| ------------------- | ---------- | --------------------- | --------------------- |
+| **– GND** *(B2)*    | **Black**  | **B2 → H22**          | **GND** *(row 22)*    |
+| **+ VCC** *(B3)*    | **Red**    | **B3 → H10**          | **3V3** *(row 10)*    |
+| **S / DATA** *(B4)* | **Yellow** | **B4 → A19**          | **D2** *(row 19)*     |
+
+Breadboard quick rule:<br>
+A–E are connected across each row, and F–J are connected across each row; the center trench isolates the two sides.<br>
+So to wire parts, run a jumper from the sensor’s pin to the same row number where the matching Nano pin lands.<br>
+Row tags like H22/H10/A19 simply mean “the physical row the Nano pin sits on.”
 
 # Preparation
 

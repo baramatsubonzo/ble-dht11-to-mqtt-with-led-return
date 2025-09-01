@@ -1,3 +1,37 @@
+# System Architecture
+```mermaid
+flowchart LR
+    DHT["DHT-11 Sensor"]
+    LED["Onboard LED"]
+
+    subgraph Arduino["Arduino Nano 33 IoT"]
+		BLE_Char1["dhtCharacteristic"]
+        BLE_Char2["ledCharacteristic"]
+    end
+
+    subgraph Pi["Raspberry Pi"]
+        BLE_Read["upstream.py"]
+        BLE_Write["downstream.py"]
+    end
+
+    subgraph EC2["AWS EC2 (MQTT Broker)"]
+        Broker["Mosquitto"]
+    end
+
+	subgraph Phone["Smartphone"]
+		 MyMQTTApp
+	end
+
+	DHT -->|Temperature & Humidity| BLE_Char1
+    Arduino --> |BLE Read/Notify| Pi
+    Pi --> |Publish| EC2
+    EC2 --> |Data| Phone
+    Phone --> |LED_ON/OFF| EC2
+    EC2 --> |Commands| Pi
+    Pi --> |BLE Write| BLE_Char2
+    BLE_Char2 --> LED
+
+```
 
 # Preparation
 

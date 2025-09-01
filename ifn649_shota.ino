@@ -1,4 +1,9 @@
 #include <ArduinoBLE.h>
+#include "DHT.h"
+// Define the pin and sensor type
+#define DHTPIN 2 // Use digital pin
+#define DHTTYPE DHT11 // sensor
+DHT dht(DHTPIN, DHTTYPE); // generate instance
 
 // Custom Service and Characteristic UUIDs
 #define SERVICE_UUID        "19B10000-E8F2-537E-4F6C-D104768A1214"
@@ -27,6 +32,8 @@ void setup() {
   Serial.begin(9600);
   //TODO:
   pinMode(LED_BUILTIN, OUTPUT);
+  //Initialize DHT
+  dht.begin();
 
   if (!BLE.begin()) {
     Serial.println("Failed to initialize BLE!");
@@ -69,16 +76,28 @@ void loop() {
   if (isConnected && now - lastSend >= sendIntervalMs) {
     lastSend = now;
 
-    // TODO: Dummy
-    float temperature = 77.7; 
-    String tempStr = String(temperature);
+    // Read temperature as Celsius (default)
+    float temp = dht.readTemperature();
+    // Read humidity
+    float humidity = dht.readHumidity();
 
-    dhtCharacteristic.writeValue(tempStr.c_str());
-      // TODO: Dummy
-    Serial.print("Updated BLE value to: ");
-    Serial.println(tempStr);  
+    if (isnan(temp) || isnan(humidity)) {
+      Serial.println("Failed to read from DHT sensor!");
+    } else {
+      //TODO:
+      Serial.print("Temperature: ");
+      Serial.print(temp);
+      Serial.print(" °C\tHumidity: ");
+      Serial.print(humidity);
+      Serial.println(" %");
+  
+      char msg[11]; // TODO: 10バイト(+終端)
+      int len = snprintf(msg, sizeof(msg), "%.0f,%.0f", temp, humidity);
+      if (len > 10) len = 10;          // 念のため切り詰め
+      dhtCharacteristic.writeValue((uint8_t*)msg, len);
+    }
   }
-
+  // Donwstream: LED command
   if (ledCharacteristic.written()) {
     // TODO:
     int len = ledCharacteristic.valueLength();

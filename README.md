@@ -4,12 +4,12 @@ flowchart LR
     DHT["DHT-11 Sensor"]
     LED["Onboard LED"]
 
-    subgraph Arduino["Arduino Nano 33 IoT"]
-		BLE_Char1["dhtCharacteristic"]
-        BLE_Char2["ledCharacteristic"]
+    subgraph Arduino["Arduino Nano 33 IoT<br>(Peripheral)"]
+		BLE_Char1["dhtCharacteristic<br>(Read, Notify)"]
+        BLE_Char2["ledCharacteristic<br>(Write)"]
     end
 
-    subgraph Pi["Raspberry Pi"]
+    subgraph Pi["Raspberry Pi<br>(Central)"]
         BLE_Read["upstream.py"]
         BLE_Write["downstream.py"]
     end
@@ -22,14 +22,14 @@ flowchart LR
 		 MyMQTTApp
 	end
 
-	DHT -->|Temperature & Humidity| BLE_Char1
+	DHT -->|Temperature & Humidity| Arduino
     Arduino --> |BLE Read/Notify| Pi
-    Pi --> |Publish| EC2
-    EC2 --> |Data| Phone
-    Phone --> |LED_ON/OFF| EC2
-    EC2 --> |Commands| Pi
-    Pi --> |BLE Write| BLE_Char2
-    BLE_Char2 --> LED
+    Pi --> |Publish: ifn649/dht| EC2
+    EC2 --> |Subscribes ifn649/dht| Phone
+    Phone --> |LED_ON/OFF: ifn649/led| EC2
+    EC2 --> |Subscribes ifn649/led| Pi
+    Pi --> |BLE Write| Arduino
+    Arduino --> LED
 
 ```
 
